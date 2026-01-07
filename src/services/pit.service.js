@@ -1,41 +1,47 @@
-const { PAYE_TAX_BANDS } = require("../utils/taxBands");
+// src/services/pit.service.js
+
+const PAYE_TAX_BANDS = require("../utils/taxBands");
+const { normalizeAnnualIncome } = require("../utils/tax/normalize");
 
 /**
- * PIT – Annual personal income tax
+ * Personal Income Tax (Non-PAYE Individuals)
  */
-const calculatePIT = async ({ grossIncome, allowances = 0 }) => {
-	// CRA
-	const CRA = grossIncome * 0.2 + 200000;
+const calculatePIT = async ({ grossIncome, frequency = "annual" }) => {
+	if (!Array.isArray(PAYE_TAX_BANDS)) {
+		throw new Error("PAYE_TAX_BANDS must be an array");
+	}
 
-	const taxableIncome = Math.max(grossIncome - CRA - allowances, 0);
+	// 1. Normalize income
+	const annualIncome = normalizeAnnualIncome(grossIncome, frequency);
 
-	let remaining = taxableIncome;
-	let tax = 0;
+	let remaining = annualIncome;
+	let totalTax = 0;
 	const breakdown = [];
 
+	// 2. Apply PAYE progressive bands
 	for (const band of PAYE_TAX_BANDS) {
 		if (remaining <= 0) break;
 
-		const amount = Math.min(remaining, band.limit);
-		const bandTax = amount * band.rate;
+		const taxableAmount = Math.min(remaining, band.limit);
+		const taxForBand = taxableAmount * band.rate;
 
 		breakdown.push({
-			bandLimit: band.limit,
 			rate: band.rate,
-			taxableAmount: amount,
-			tax: Number(bandTax.toFixed(2)),
+			taxableAmount,
+			tax: Number(taxForBand.toFixed(2)),
 		});
 
-		tax += bandTax;
-		remaining -= amount;
+		totalTax += taxForBand;
+		remaining -= taxableAmount;
 	}
 
 	return {
+		taxType: "PIT",
 		grossIncome,
-		CRA,
-		allowances,
-		taxableIncome,
-		totalTax: Number(tax.toFixed(2)),
+		frequency,
+		annualIncome,
+		totalAnnualTax: Number(totalTax.toFixed(2)),
+		monthlyTax: Number((totalTax / 12).toFixed(2)),
 		breakdown,
 	};
 };

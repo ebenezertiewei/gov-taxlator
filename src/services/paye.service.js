@@ -1,5 +1,5 @@
 // src/services/paye.service.js
-const { PAYE_TAX_BANDS } = require("../utils/taxBands");
+const PAYE_TAX_BANDS = require("../utils/taxBands");
 // -----------------------
 console.log("PAYE_TAX_BANDS:", PAYE_TAX_BANDS);
 console.log("Is Array:", Array.isArray(PAYE_TAX_BANDS));

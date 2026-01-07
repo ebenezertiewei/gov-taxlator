@@ -1,6 +1,6 @@
 // src/services/vat.service.js
 
-const { VAT_RATE } = require("../utils/taxBands");
+const VAT_RATE = require("../utils/vat");
 
 /**
  * Calculate VAT
