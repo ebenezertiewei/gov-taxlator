@@ -1,11 +1,19 @@
-const Joi = require('joi');
+const Joi = require("joi");
 
-exports.vatRequestSchema = Joi.object({
-  salesAmount: Joi.number().min(0).precision(2).required(),
-  purchaseAmount: Joi.number().min(0).precision(2).default(0)
-}).custom((value, helpers) => {
-  if (value.salesAmount === 0 && value.purchaseAmount === 0) {
-    return helpers.message('Both sales and purchase amounts cannot be zero');
-  }
-  return value;
+/**
+ * VAT Request Schema
+ */
+const vatRequestSchema = Joi.object({
+	transactionAmount: Joi.number().positive().required(),
+	calculationType: Joi.string().valid("add", "remove").required(),
+	transactionType: Joi.string()
+		.valid(
+			"Domestic sale/Purchase",
+			"Digital Services",
+			"Export/International",
+			"Exempt"
+		)
+		.required(),
 });
+
+module.exports = vatRequestSchema;

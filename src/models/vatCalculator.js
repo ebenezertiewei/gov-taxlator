@@ -1,45 +1,31 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const VatCalculationSchema = new mongoose.Schema(
-  {
-    salesAmount: {
-      type: Number,
-      required: true,
-      min: 0
-    },
+const VatCalculatorSchema = new mongoose.Schema(
+	{
+		// transaction amount before VAT
+		transactionAmount: {
+			type: Number,
+			required: true,
+			min: 0,
+		},
 
-    purchaseAmount: {
-      type: Number,
-      min: 0,
-      default: 0
-    },
+		// Type of calculation: "add" or "remove" VAT
+		calculationType: {
+			type: String,
+			enum: ["add", "remove"],
+			required: true,
+		},
 
-    // Computed fields (returned by vatService)
-    outputVAT: {
-      type: Number // VAT on sales
-    },
-
-    inputVAT: {
-      type: Number // VAT on purchases
-    },
-
-    vatPayable: {
-      type: Number // Net VAT (payable or refundable)
-    },
-
-    isRefundable: {
-      type: Boolean,
-      default: false
-    },
-
-    vatRate: {
-      type: Number,
-      default: 7.5
-    }
-  },
-  {
-    timestamps: true
-  }
+		// Type of transaction: Domestic, Digital, Export, Exempt
+		transactionType: {
+			type: String,
+			enum: ["Domestic sale/Purchase", "Digital Services", "Export/International", "Exempt"],
+			required: true,
+		},
+	},
+	{
+		timestamps: true,
+	}
 );
 
-module.exports = mongoose.model('VatCalculation', VatCalculationSchema);
+module.exports = mongoose.model("VatCalculation", VatCalculatorSchema);

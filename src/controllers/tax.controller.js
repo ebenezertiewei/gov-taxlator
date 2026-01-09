@@ -1,8 +1,8 @@
+// src/controllers/tax.controller.js
 const Joi = require("joi");
-const payeService = require("../services/paye.service");
+const payeService = require("../services/payePit.service");
 const vatService = require("../services/vat.service");
 const freelancerService = require("../services/freelancer.service");
-const pitService = require("../services/pit.service");
 const citService = require("../services/cit.service");
 
 /**
@@ -10,24 +10,52 @@ const citService = require("../services/cit.service");
  */
 const taxRequestSchema = Joi.object({
 	taxType: Joi.string()
-		.valid("PAYE", "VAT", "FREELANCER", "PIT", "CIT")
+		.valid("PAYE/PIT", "VAT", "FREELANCER", "CIT")
 		.required(),
 
-	// PAYE & FREELANCER
+	// PAYE/PIT, FREELANCER
 	grossIncome: Joi.number().positive().optional(),
+	rentRelief: Joi.number().min(0).precision(2).optional(),
+	otherDeductions: Joi.number().min(0).precision(2).optional(),
+
+	// FREELANCER monthly should automatically be calculated by 12 months
 	frequency: Joi.string().valid("monthly", "annual").default("annual"),
 
-	// FREELANCER only
+	// PAYE/PIT to be calculated by 8% of gross income
+	pension: Joi.number().min(0).optional(),
+
+	// FREELANCER & PAYE/PIT
+	pension: Joi.number().min(0).optional(),
+
+	// FREELANCER & CIT
 	expenses: Joi.number().min(0).optional(),
 
-	// VAT only
+	// VAT
 	amount: Joi.number().positive().optional(),
 
 	// CIT
-	// turnover: Joi.number().positive().optional(),
-	profit: Joi.number().positive().optional(),
 	companySize: Joi.string().valid("SMALL", "MEDIUM", "LARGE").optional(),
-});
+	revenue: Joi.number().positive().optional(),
+})
+	.unknown(false) // ⛔ Block unexpected fields (e.g. profit)
+	.custom((value, helpers) => {
+		// CIT-specific rules
+		if (value.taxType === "CIT") {
+			if (value.revenue === undefined) {
+				return helpers.error("any.custom", "revenue is required for CIT");
+			}
+
+			if (value.companySize === undefined) {
+				return helpers.error("any.custom", "companySize is required for CIT");
+			}
+
+			if (value.expenses !== undefined && value.expenses > value.revenue) {
+				return helpers.error("any.custom", "expenses cannot exceed revenue");
+			}
+		}
+
+		return value;
+	});
 
 /**
  * POST /api/tax/calculate
@@ -46,14 +74,8 @@ exports.calculateTax = async (req, res, next) => {
 		let result;
 
 		switch (value.taxType) {
-			case "PAYE":
+			case "PAYE/PIT":
 				result = await payeService.calculatePAYE(value);
-				break;
-
-			case "VAT":
-				result = await vatService.calculateVAT({
-					amount: value.amount,
-				});
 				break;
 
 			case "FREELANCER":
@@ -61,21 +83,15 @@ exports.calculateTax = async (req, res, next) => {
 					grossIncome: value.grossIncome,
 					frequency: value.frequency,
 					expenses: value.expenses || 0,
-				});
-				break;
-
-			case "PIT":
-				result = await pitService.calculatePIT({
-					grossIncome: value.grossIncome,
-					frequency: value.frequency,
+					pension: value.pension || 0,
 				});
 				break;
 
 			case "CIT":
 				result = await citService.calculateCIT({
-					// turnover: value.turnover,
-					profit: value.profit,
+					revenue: value.revenue,
 					companySize: value.companySize,
+					expenses: value.expenses || 0,
 				});
 				break;
 
@@ -86,7 +102,7 @@ exports.calculateTax = async (req, res, next) => {
 				});
 		}
 
-		res.status(200).json({
+		return res.status(200).json({
 			success: true,
 			data: result,
 		});

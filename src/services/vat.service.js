@@ -1,49 +1,66 @@
-// src/services/vat.service.js
-
-const VAT_RATE = require("../utils/vat");
-
 /**
- * Calculate VAT
+ * Helper: calculate VAT amount
  */
-exports.calculateVat = async ({ salesAmount, purchaseAmount = 0 }) => {
-	if (salesAmount <= 0 && purchaseAmount <= 0) {
-		const error = new Error(
-			"Sales or purchase amount must be greater than zero"
-		);
-		error.statusCode = 400;
-		throw error;
+const calculateVATHelper = ({ amount, type, rate }) => {
+	let result;
+
+	if (type === "add") {
+		// Add VAT
+		result = amount * (1 + rate);
 	}
 
-	const salesVat = salesAmount * VAT_RATE;
-	const purchaseVat = purchaseAmount * VAT_RATE;
+	if (type === "remove") {
+		// Do NOT apply VAT (amount already net)
+		result = amount;
+	}
 
-	return {
-		vatRate: VAT_RATE,
-		salesAmount,
-		purchaseAmount,
-		salesVat: Number(salesVat.toFixed(2)),
-		purchaseVat: Number(purchaseVat.toFixed(2)),
-		netVat: Number((salesVat - purchaseVat).toFixed(2)),
-	};
+	if (result === undefined) {
+		throw new Error("Invalid calculation type, must be 'add' or 'remove'");
+	}
+
+	// Round to 2 decimal places
+	return Math.round(result * 100) / 100;
 };
 
 /**
- * Reverse VAT calculation
+ * Default VAT rates by transaction type
  */
-exports.calculateReverseVat = async ({ totalAmount }) => {
-	if (totalAmount <= 0) {
-		const error = new Error("Total amount must be greater than zero");
-		error.statusCode = 400;
-		throw error;
+const VAT_RATES = {
+	"Domestic sale/Purchase": 0.075,
+	"Digital Services": 0.075,
+	"Export/International": 0,
+	Exempt: 0,
+};
+
+/**
+ * Main VAT calculation service
+ */
+const calculateVATService = ({
+	transactionAmount,
+	calculationType,
+	rate,
+	transactionType,
+}) => {
+	const vatRate = rate !== undefined ? rate : VAT_RATES[transactionType];
+
+	if (vatRate < 0 || vatRate > 1) {
+		throw new Error("VAT rate must be between 0 and 1");
 	}
 
-	const baseAmount = totalAmount / (1 + VAT_RATE);
-	const vatAmount = totalAmount - baseAmount;
+	const result = calculateVATHelper({
+		amount: transactionAmount,
+		type: calculationType,
+		rate: vatRate,
+	});
 
 	return {
-		vatRate: VAT_RATE,
-		baseAmount: Number(baseAmount.toFixed(2)),
-		vatAmount: Number(vatAmount.toFixed(2)),
-		totalAmount: Number(totalAmount.toFixed(2)),
+		transactionAmount,
+		calculationType,
+		transactionType,
+		// Only include vatRate when VAT is added
+		...(calculationType === "add" && { vatRate }),
+		result,
 	};
 };
+
+module.exports = { calculateVATService };

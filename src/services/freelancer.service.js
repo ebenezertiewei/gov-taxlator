@@ -1,13 +1,26 @@
 // src/services/freelancer.service.js
 
-// 1️⃣ Import the tax bands first
+// 1️⃣ Import the tax bands
 const PAYE_TAX_BANDS = require("../utils/taxBands");
 
-// 2️⃣ Import any other utilities
-const {
-	normalizeAnnualIncome,
-	calculateTaxableIncome,
-} = require("../utils/tax/freelancer.util");
+// 2️⃣ Import utility for normalizing income
+const { normalizeAnnualIncome } = require("../utils/tax/freelancer.util");
+
+/**
+ * Calculate taxable income for freelancer
+ */
+const calculateTaxableIncome = (
+	annualGrossIncome,
+	pension = 0,
+	expenses = 0
+) => {
+	// Ensure deductions are numbers
+	pension = pension || 0;
+	expenses = expenses || 0;
+
+	// Subtract both pension and expenses from gross income
+	return annualGrossIncome - pension - expenses;
+};
 
 /**
  * Calculate Freelancer / Self-Employed Tax
@@ -15,22 +28,28 @@ const {
 const calculateFreelancerTax = async ({
 	grossIncome,
 	frequency = "annual",
+	pension = 0,
 	expenses = 0,
 }) => {
-	// 1. Normalize income
+	// 1. Normalize income to annual if needed
 	const annualGrossIncome = normalizeAnnualIncome(grossIncome, frequency);
 
-	// 2. Calculate taxable income
-	const taxableIncome = calculateTaxableIncome(annualGrossIncome, expenses);
+	// 2. Calculate taxable income (now includes pension)
+	const taxableIncome = calculateTaxableIncome(
+		annualGrossIncome,
+		pension,
+		expenses
+	);
 
 	let remainingIncome = taxableIncome;
 	let totalTax = 0;
 	const breakdown = [];
 
-	// 3. Apply progressive tax bands
+	// 3. Apply progressive PAYE tax bands
 	for (const band of PAYE_TAX_BANDS) {
 		if (remainingIncome <= 0) break;
 
+		// Taxable amount for this band
 		const taxableAmount = Math.min(remainingIncome, band.limit);
 		const taxForBand = taxableAmount * band.rate;
 
@@ -47,6 +66,7 @@ const calculateFreelancerTax = async ({
 	return {
 		grossIncome,
 		expenses,
+		pension,
 		frequency,
 		annualGrossIncome,
 		taxableIncome,

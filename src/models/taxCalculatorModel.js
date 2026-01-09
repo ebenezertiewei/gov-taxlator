@@ -1,83 +1,86 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const TaxCalculationSchema = new mongoose.Schema(
-  {
-    taxType: {
-      type: String,
-      enum: ['PAYE', 'PIT', 'FREELANCER', 'CIT'],
-      required: true,
-      index: true
-    },
+	{
+		// required: PAYE, PIT, FREELANCER, CIT
+		taxType: {
+			type: String,
+			enum: ["PAYE/PIT", "FREELANCER", "CIT"],
+			required: true,
+			index: true,
+		},
 
-    grossIncome: {
-      type: Number,
-      required: function () {
-        return this.taxType !== 'CIT';
-      },
-      min: 0
-    },
+		// Used for PAYE/PIT, FREELANCER
+		grossIncome: {
+			type: Number,
+			min: 0,
+			required: function () {
+				return this.taxType !== "CIT";
+			},
+		},
 
-    frequency: {
-      type: String,
-      enum: ['monthly', 'annual'],
-      default: 'annual'
-    },
+		// deductions options for PAYE/PIT
+		// PAYE/PIT 20% annual rent
+		rentRelief: {
+			type: Number,
+			min: 0,
+			default: 0,
+		},
 
-    pension: {
-      type: Boolean,
-      default: true
-    },
+		otherDeductions: {
+			type: Number,
+			min: 0,
+			default: 0,
+		},
 
-    nhf: {
-      type: Boolean,
-      default: false
-    },
+		// Used for CIT (company turnover)
+		revenue: {
+			type: Number,
+			min: 0,
+			required: function () {
+				return this.taxType === "CIT";
+			},
+		},
 
-    allowances: {
-      type: Number,
-      min: 0,
-      default: 0
-    },
+		// income frequency: monthly or annual
+		frequency: {
+			type: String,
+			enum: ["monthly", "annual"],
+			default: "annual",
+		},
 
-    expenses: {
-      type: Number,
-      min: 0,
-      required: function () {
-        return this.taxType === 'FREELANCER';
-      }
-    },
+		// deductions options
+		// FREELANCER, just plain deductions
+		pension: {
+			type: Boolean,
+			default: true,
+		},
 
-    // turnover: {
-    //   type: Number,
-    //   min: 0,
-    //   required: function () {
-    //     return this.taxType === 'CIT';
-    //   }
-    // },
+		// Freelancer-only deductions
+		expenses: {
+			type: Number,
+			min: 0,
+			required: function () {
+				return this.taxType === "FREELANCER";
+			},
+		},
 
-    profit: {
-      type: Number,
-      required: function () {
-        return this.taxType === 'CIT';
-      }
-    },
+		// CIT is calculated on profit
+		profit: {
+			type: Number,
+			required: function () {
+				return this.taxType === "CIT";
+			},
+		},
 
-    // computed / result fields (optional but recommended)
-    taxableIncome: {
-      type: Number
-    },
-
-    taxAmount: {
-      type: Number
-    },
-
-    effectiveTaxRate: {
-      type: Number
-    }
-  },
-  {
-    timestamps: true
-  }
+		// computed / result fields
+		taxableIncome: Number,
+		taxAmount: Number,
+		effectiveTaxRate: Number,
+	},
+	{
+		timestamps: true,
+	}
 );
 
-module.exports = mongoose.model('TaxCalculation', TaxCalculationSchema);
+module.exports = mongoose.model("TaxCalculation", TaxCalculationSchema);

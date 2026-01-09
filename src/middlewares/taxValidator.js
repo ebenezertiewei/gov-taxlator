@@ -1,22 +1,20 @@
-const Joi = require('joi');
+const Joi = require("joi");
 
 exports.taxRequestSchema = Joi.object({
-  taxType: Joi.string()
-    .valid('PAYE', 'PIT', 'FREELANCER', 'CIT')
-    .required(),
+	taxType: Joi.string().valid("PAYE/PIT", "FREELANCER", "CIT").required(),
 
-  grossIncome: Joi.number().positive().precision(2).required(),
+	// PAYE/PIT
+	grossIncome: Joi.number().positive().precision(2).required(),
+	rentRelief: Joi.number().min(0).precision(2).optional(),
+	otherDeductions: Joi.number().min(0).precision(2).optional(),
 
-  frequency: Joi.string().valid('monthly', 'annual').default('annual'),
+	frequency: Joi.string().valid("monthly", "annual").default("annual"),
 
-  pension: Joi.boolean().default(true),
-  nhf: Joi.boolean().default(false),
+	//   FREELANCER
+	pension: Joi.boolean().default(true),
 
-  allowances: Joi.number().min(0).precision(2).optional(),
-  expenses: Joi.number().min(0).precision(2).optional(),
-  turnover: Joi.number().min(0).precision(2).optional(),
-  profit: Joi.number().precision(2).optional()
+	// FREELANCER & CIT
+	expenses: Joi.number().min(0).precision(2).optional(),
 }).custom((value, helpers) => {
-  // same custom logic you already wrote
-  return value;
+	return value;
 });
