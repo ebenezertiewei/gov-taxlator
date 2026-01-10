@@ -11,9 +11,7 @@ const app = express();
 
 // Environment-based CORS
 const allowedOrigins =
-	process.env.NODE_ENV === "production"
-		? ["https://myfrontend.com"]
-		: ["http://localhost:8000"];
+	process.env.NODE_ENV === "production" ? "*" : ["http://localhost:8000"];
 
 app.use(
 	cors({
