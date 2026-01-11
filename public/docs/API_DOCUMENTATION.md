@@ -52,12 +52,12 @@ Authenticate an existing user and return a JWT.
 ### TAX
 | Method | Endpoint | Description |
 |--------|---------|------------|
-| POST   | /api/tax/calculateTAX | Calculator endpoint |
+| POST   | /api/tax/calculate | Calculator endpoint |
 
 ### VAT
 | Method | Endpoint | Description |
 |--------|---------|------------|
-| POST   | /api/vat/calculateVAT | Calculator endpoint |
+| POST   | /api/vat/calculate | Calculator endpoint |
 
 ---
 
