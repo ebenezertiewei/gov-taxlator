@@ -10,7 +10,7 @@ function calculatePAYE({
 
 	// Statutory deductions
 	const pensionDeduction = pension ? annualIncome * 0.08 : 0;
-	const nhisDeduction = nhis ? annualIncome * 0.1 : 0;
+	const nhisDeduction = nhis ? annualIncome * 0.05 : 0;
 	const nhfDeduction = nhf ? annualIncome * 0.025 : 0;
 
 	const statutoryDeductions = pensionDeduction + nhisDeduction + nhfDeduction;
