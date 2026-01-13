@@ -46,6 +46,16 @@ Verify a user’s email using the code sent at signup.
 
 ---
 
+### SEND VERIFICATION CODE
+
+Send a new verification code if the previous one expired or was lost.
+
+| Method | Endpoint                       | Description            |
+| ------ | ------------------------------ | ---------------------- |
+| POST   | /api/auth/sendVerificationCode | Send verification code |
+
+---
+
 ### SIGNIN
 
 Authenticate an existing verified user and return a JWT. Only verified users can signin successfully.
@@ -56,13 +66,33 @@ Authenticate an existing verified user and return a JWT. Only verified users can
 
 ---
 
-### SEND VERIFICATION CODE
+### CHANGE PASSWORD
 
-Send a new verification code if the previous one expired or was lost.
+Allows a logged-in user to change their password. Requires JWT authentication.
 
-| Method | Endpoint                       | Description            |
-| ------ | ------------------------------ | ---------------------- |
-| POST   | /api/auth/sendVerificationCode | Send verification code |
+| Method | Endpoint         | Description             |
+| ------ | ---------------- | ----------------------- |
+| POST   | /api/auth/changePassword | Change password |
+
+---
+
+### FORGOT PASSWORD
+
+Sends a password reset code to the user’s email.
+
+| Method | Endpoint         | Description             |
+| ------ | ---------------- | ----------------------- |
+| POST   | /api/auth/forgotPassword | forgot password |
+
+---
+
+### RESET PASSWORD
+
+Resets a user’s password using the reset code sent to email.
+
+| Method | Endpoint         | Description             |
+| ------ | ---------------- | ----------------------- |
+| POST   | /api/auth/resetPassword | reset password |
 
 ---
 
@@ -101,6 +131,8 @@ Both Tax and VAT endpoints are dual-purpose:
 
 ## STATUS CODES ⚠
 
+- `200` – Successs
+- `201` – Successs / new resourse created
 - `400` – Bad request / validation error
 - `401` – Unauthorized / invalid token
 - `403` – Forbidden / email not verified
