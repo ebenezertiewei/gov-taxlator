@@ -35,6 +35,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/tax", taxRoutes);
 app.use("/api/vat", vatRoutes);
 
+// Root endpoint
+app.get("/", (req, res) => {
+	res.send("✅ Gov-Taxlator API is running");
+});
+
 // Health check endpoint
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
