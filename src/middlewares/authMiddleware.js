@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/authModels"); // your User model
+const User = require("../models/authModels");
 
 const protect = async (req, res, next) => {
 	const authHeader = req.headers.authorization;
@@ -11,7 +11,18 @@ const protect = async (req, res, next) => {
 	const token = authHeader.split(" ")[1];
 
 	try {
-	const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
+		if (!process.env.TOKEN_SECRET) {
+			throw new Error("TOKEN_SECRET missing");
+		}
+
+		const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
+
+		if (!decoded?.id) {
+			return res
+				.status(401)
+				.json({ success: false, message: "Invalid token payload" });
+		}
+
 		const user = await User.findById(decoded.id).select("-password");
 		if (!user) {
 			return res
@@ -19,10 +30,14 @@ const protect = async (req, res, next) => {
 				.json({ success: false, message: "User not found" });
 		}
 
-		req.user = user; // attach user to request
+		req.user = user;
 		next();
 	} catch (err) {
-		return res.status(401).json({ success: false, message: "Token invalid" });
+		if (err.name === "TokenExpiredError") {
+			return res.status(401).json({ success: false, message: "Token expired" });
+		}
+
+		return res.status(401).json({ success: false, message: "Invalid token" });
 	}
 };
 
