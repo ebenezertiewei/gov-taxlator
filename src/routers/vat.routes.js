@@ -1,9 +1,11 @@
+// src/routers/vat.routes.js
 const express = require("express");
-const router = express.Router();
-const protect = require("../middlewares/authMiddleware");
 const { calculateVAT } = require("../controllers/vat.controller");
+const handleCalculation = require("../utils/calcHandler");
 
-// Authenticated route: calculate and save VAT record
-router.post("/calculate", protect, calculateVAT); // only save if logged in
+const router = express.Router();
+
+// Use dual-purpose handler
+router.post("/calculate", handleCalculation(calculateVAT));
 
 module.exports = router;

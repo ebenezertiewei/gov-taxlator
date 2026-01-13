@@ -1,9 +1,11 @@
+// src/routers/tax.routes.js
 const express = require("express");
-const router = express.Router();
-const protect = require("../middlewares/authMiddleware");
 const { calculateTax } = require("../controllers/tax.controller");
+const handleCalculation = require("../utils/calcHandler");
 
-// Authenticated route: calculate and save tax record
-router.post("/calculate", protect, calculateTax); // only save if logged in
+const router = express.Router();
+
+// Use dual-purpose handler
+router.post("/calculate", handleCalculation(calculateTax));
 
 module.exports = router;
