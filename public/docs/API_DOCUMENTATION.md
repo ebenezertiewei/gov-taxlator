@@ -28,7 +28,7 @@ Used to confirm that the backend service is running.
 
 ### SIGNUP
 
-Register a new user. A 6-digit verification code is sent to the user’s email. Users must verify their email before calculation records can be saved.
+Register a new user. A 6-digit verification code is sent to the user’s email. User must verify their email before calculation records can be saved.
 
 | Method | Endpoint         | Description       |
 | ------ | ---------------- | ----------------- |
@@ -48,7 +48,7 @@ Verify a user’s email using the code sent at signup.
 
 ### SEND VERIFICATION CODE
 
-Send a new verification code if the previous one expired or was lost.
+Send a new verification code if the previous code expired or was lost.
 
 | Method | Endpoint                       | Description            |
 | ------ | ------------------------------ | ---------------------- |
@@ -56,9 +56,9 @@ Send a new verification code if the previous one expired or was lost.
 
 ---
 
-### SIGNIN
+### SIGN-IN
 
-Authenticate an existing verified user and return a JWT. Only verified users can signin successfully.
+Authenticate an existing verified user and return a JWT. Only verified users can sign-in successfully.
 
 | Method | Endpoint         | Description             |
 | ------ | ---------------- | ----------------------- |
@@ -96,7 +96,7 @@ Resets a user’s password using the reset code sent to email.
 
 ---
 
-### SIGNOUT
+### SIGN-OUT
 
 Clear authentication cookie and logout.
 
