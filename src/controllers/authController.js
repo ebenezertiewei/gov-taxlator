@@ -44,25 +44,30 @@ exports.signup = async (req, res) => {
 
 		await newUser.save();
 
-		// Send verification email
-		await transport.sendMail({
-			from: process.env.NODE_CODE_SENDING_EMAIL_ADDRESS,
-			to: normalizedEmail,
-			subject: "Verify Your Account",
-			html: `<p>Your verification code is: <b>${codeValue}</b>. It is valid for 15 minutes.</p>`,
-		});
+		// Send verification email asynchronously (non-blocking)
+		transport
+			.sendMail({
+				from: process.env.NODE_CODE_SENDING_EMAIL_ADDRESS,
+				to: normalizedEmail,
+				subject: "Verify Your Account",
+				html: `<p>Your verification code is: <b>${codeValue}</b>. It is valid for 15 minutes.</p>`,
+			})
+			.catch((err) => console.error("Email sending failed:", err));
 
+		// Respond immediately
 		res.status(201).json({
 			success: true,
 			message:
 				"Account created. Please check your email for the verification code.",
 		});
 	} catch (err) {
-		console.error(err);
-		res.status(500).json({ success: false, message: "Server error" });
+		console.error("Signup error:", err);
+		res.status(500).json({
+			success: false,
+			message: err.message || "Server error",
+		});
 	}
 };
-
 /* ================= EMAIL VERIFICATION ================= */
 exports.verifyEmail = async (req, res) => {
 	const { email, code } = req.body;
