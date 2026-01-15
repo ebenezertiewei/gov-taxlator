@@ -1,3 +1,4 @@
+// gov-taxlatorAPI/server.js
 require("dotenv").config();
 const mongoose = require("mongoose");
 const app = require("./app");
@@ -6,25 +7,38 @@ const { PORT = 8000, MONGO_URI } = process.env;
 
 /**
  * ENV sanity checks (booleans only — no secrets leaked)
- * Put this in the entry point so it runs once at startup.
+ * Runs once at startup.
  */
-console.log("MAIL USER:", !!process.env.NODE_CODE_SENDING_EMAIL_ADDRESS);
-console.log("MAIL PASS:", !!process.env.NODE_CODE_SENDING_EMAIL_PASSWORD);
+console.log("MONGO_URI:", !!MONGO_URI);
+console.log("TOKEN_SECRET:", !!process.env.TOKEN_SECRET);
 
-// Optional but recommended: fail fast if critical env vars are missing
+console.log("GMAIL_CLIENT_ID:", !!process.env.GMAIL_CLIENT_ID);
+console.log("GMAIL_CLIENT_SECRET:", !!process.env.GMAIL_CLIENT_SECRET);
+console.log("GMAIL_REFRESH_TOKEN:", !!process.env.GMAIL_REFRESH_TOKEN);
+console.log("GMAIL_SENDER:", !!process.env.GMAIL_SENDER);
+
+// Fail fast if critical env vars are missing
 if (!MONGO_URI) {
 	console.error("❌ Missing MONGO_URI in environment variables");
 	process.exit(1);
 }
 
-// If email is required for core flows like signup verification, fail fast as well.
-// If you want to allow running without email in dev, remove this block.
+if (!process.env.TOKEN_SECRET) {
+	console.error("❌ Missing TOKEN_SECRET in environment variables");
+	process.exit(1);
+}
+
+// Email is required for signup verification flows.
+// If you want to allow the API to run without email in some environments,
+// change this to a warning instead of process.exitC.
 if (
-	!process.env.NODE_CODE_SENDING_EMAIL_ADDRESS ||
-	!process.env.NODE_CODE_SENDING_EMAIL_PASSWORD
+	!process.env.GMAIL_CLIENT_ID ||
+	!process.env.GMAIL_CLIENT_SECRET ||
+	!process.env.GMAIL_REFRESH_TOKEN ||
+	!process.env.GMAIL_SENDER
 ) {
 	console.error(
-		"❌ Missing email environment variables (NODE_CODE_SENDING_EMAIL_ADDRESS / NODE_CODE_SENDING_EMAIL_PASSWORD)"
+		"❌ Missing Gmail API environment variables (GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET / GMAIL_REFRESH_TOKEN / GMAIL_SENDER)"
 	);
 	process.exit(1);
 }
