@@ -99,7 +99,7 @@ Resets a user’s password using the reset code sent to email.
 ### SIGN-OUT
 
 Clear authentication cookie and logout.
-
+ 
 | Method   | Endpoint          | Description  |
 | -------- | ----------------- | ------------ |
 | GET/POST | /api/auth/signout | Signout user |

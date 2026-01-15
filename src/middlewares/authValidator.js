@@ -36,7 +36,7 @@ exports.signupSchema = Joi.object({
 
   password: Joi.string()
     .min(8)
-    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&._])[A-Za-z\d@$!%*?&]{8,}$/)
     .required()
     .messages({
       'string.empty': 'Password is required',
