@@ -31,16 +31,16 @@ if (!process.env.TOKEN_SECRET) {
 // Email is required for signup verification flows.
 // If you want to allow the API to run without email in some environments,
 // change this to a warning instead of process.exitC.
-if (
-	!process.env.GMAIL_CLIENT_ID ||
-	!process.env.GMAIL_CLIENT_SECRET ||
-	!process.env.GMAIL_REFRESH_TOKEN ||
-	!process.env.GMAIL_SENDER
-) {
-	console.error(
-		"❌ Missing Gmail API environment variables (GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET / GMAIL_REFRESH_TOKEN / GMAIL_SENDER)"
+const hasGmailEnv =
+	!!process.env.GMAIL_CLIENT_ID &&
+	!!process.env.GMAIL_CLIENT_SECRET &&
+	!!process.env.GMAIL_REFRESH_TOKEN &&
+	!!process.env.GMAIL_SENDER;
+
+if (!hasGmailEnv) {
+	console.warn(
+		"⚠️ Gmail API env vars missing. Email sending will fail until configured."
 	);
-	process.exit(1);
 }
 
 let server;

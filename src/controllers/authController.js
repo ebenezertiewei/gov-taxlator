@@ -17,19 +17,21 @@ exports.signup = async (req, res) => {
 			email,
 			password,
 		});
-		if (error)
+		if (error) {
 			return res
 				.status(400)
 				.json({ success: false, message: error.details[0].message });
+		}
 
 		const normalizedEmail = String(email).trim().toLowerCase();
 
 		// Check if user exists
 		const existingUser = await User.findOne({ email: normalizedEmail });
-		if (existingUser)
+		if (existingUser) {
 			return res
 				.status(400)
 				.json({ success: false, message: "User already exists" });
+		}
 
 		// Hash password
 		const hashedPassword = await doHash(password, 12);
@@ -50,28 +52,42 @@ exports.signup = async (req, res) => {
 		});
 		await newUser.save();
 
-		// Send verification email (Gmail API over HTTPS)
-		await sendGmail({
-			to: normalizedEmail,
-			subject: "Verify Your Account",
-			text: `Hello ${firstName} ${lastName}, your verification code is ${codeValue}. This code is valid for 15 minutes.`,
-			html: `
-        <p>Hello <b>${firstName} ${lastName}</b>,</p>
-        <p>You recently signed up for <b>Taxlator</b>. Your verification code is:</p>
-        <h2>${codeValue}</h2>
-        <p>This code is valid for 15 minutes. If you did not sign up, please ignore this email.</p>
-        <p>Thank you,<br/>Taxlator Team</p>
-      `,
-		});
+		// Try to send email, but don't block signup if it fails
+		let emailSent = true;
+		try {
+			await sendGmail({
+				to: normalizedEmail,
+				subject: "Verify Your Account",
+				text: `Hello ${firstName} ${lastName}, your verification code is ${codeValue}. This code is valid for 15 minutes.`,
+				html: `
+          		<p>Hello <b>${firstName} ${lastName}</b>,</p>
+        	 	 <p>You recently signed up for <b>Taxlator</b>. Your verification code is:</p>
+        	 	 <h2>${codeValue}</h2>
+         	 	<p>This code is valid for 15 minutes. If you did not sign up, please ignore this email.</p>
+         	 	<p>Thank you,<br/>Taxlator Team</p>
+        		`,
+			});
+		} catch (mailErr) {
+			emailSent = false;
+			console.error(
+				"❌ Signup email sending failed:",
+				mailErr?.message || mailErr
+			);
+			// Optional: you can also keep an "emailSendFailedAt" timestamp on the user for retry logic
+		}
 
 		return res.status(201).json({
 			success: true,
 			message:
 				"Account created. Please check your email for the verification code.",
+			emailSent,
 		});
 	} catch (err) {
 		console.error("Signup error:", err);
-		return res.status(500).json({ success: false, message: "Server error" });
+		return res.status(500).json({
+			success: false,
+			message: "Server error",
+		});
 	}
 };
 
@@ -217,6 +233,7 @@ exports.changePassword = async (req, res) => {
 };
 
 /* ================= FORGOT PASSWORD ================= */
+/* ================= FORGOT PASSWORD ================= */
 exports.forgotPassword = async (req, res) => {
 	const { email } = req.body;
 
@@ -230,29 +247,43 @@ exports.forgotPassword = async (req, res) => {
 				.json({ success: false, message: "User not found" });
 		}
 
+		// Generate temporary code (6-digit)
 		const forgotCode = Math.floor(100000 + Math.random() * 900000).toString();
-		const forgotCodeExpires = new Date(Date.now() + 15 * 60 * 1000);
+		const forgotCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
 
 		user.forgotPasswordCode = forgotCode;
 		user.forgotPasswordCodeValidation = forgotCodeExpires;
 		await user.save();
 
-		await sendGmail({
-			to: user.email,
-			subject: "Reset Your Password",
-			text: `Hello ${user.firstName} ${user.lastName}, your password reset code is ${forgotCode}. This code is valid for 15 minutes.`,
-			html: `
-        <p>Hello <b>${user.firstName} ${user.lastName}</b>,</p>
-        <p>You requested a password reset. Your verification code is:</p>
-        <h2>${forgotCode}</h2>
-        <p>This code is valid for 15 minutes. If you did not request this, please ignore this email.</p>
-        <p>Thank you,<br/>Taxlator Team</p>
-      `,
-		});
+		// Try to send email, but don't fail the endpoint if it fails
+		let emailSent = true;
+		try {
+			await sendGmail({
+				to: user.email,
+				subject: "Reset Your Password",
+				text: `Hello ${user.firstName} ${user.lastName}, your password reset code is ${forgotCode}. This code is valid for 15 minutes.`,
+				html: `
+          <p>Hello <b>${user.firstName} ${user.lastName}</b>,</p>
+          <p>You requested a password reset. Your verification code is:</p>
+          <h2>${forgotCode}</h2>
+          <p>This code is valid for 15 minutes. If you did not request this, please ignore this email.</p>
+          <p>Thank you,<br/>Taxlator Team</p>
+        `,
+			});
+		} catch (mailErr) {
+			emailSent = false;
+			console.error(
+				"❌ Forgot password email sending failed:",
+				mailErr?.message || mailErr
+			);
+		}
 
 		return res.status(200).json({
 			success: true,
-			message: "Password reset code sent successfully",
+			message: emailSent
+				? "Password reset code sent successfully"
+				: "Password reset code generated, but email delivery failed. Please try again.",
+			emailSent,
 		});
 	} catch (err) {
 		console.error("Forgot password error:", err);
@@ -308,6 +339,7 @@ exports.signout = async (req, res) => {
 };
 
 /* ================= SEND VERIFICATION CODE ================= */
+/* ================= SEND VERIFICATION CODE ================= */
 exports.sendVerificationCode = async (req, res) => {
 	const { email } = req.body;
 
@@ -315,34 +347,50 @@ exports.sendVerificationCode = async (req, res) => {
 		const normalizedEmail = String(email).trim().toLowerCase();
 
 		const user = await User.findOne({ email: normalizedEmail });
-		if (!user)
+		if (!user) {
 			return res
 				.status(404)
 				.json({ success: false, message: "User does not exist" });
+		}
 
-		if (user.verified)
+		if (user.verified) {
 			return res
 				.status(400)
 				.json({ success: false, message: "User is already verified" });
+		}
 
+		// Generate verification code
 		const codeValue = Math.floor(100000 + Math.random() * 900000).toString();
 		user.verificationCode = codeValue;
 		user.verificationExpires = new Date(Date.now() + 15 * 60 * 1000);
 		await user.save();
 
-		await sendGmail({
-			to: normalizedEmail,
-			subject: "Your Verification Code",
-			text: `Your verification code is: ${codeValue}. It is valid for 15 minutes.`,
-			html: `<p>Your verification code is: <b>${codeValue}</b>. It is valid for 15 minutes.</p>`,
-		});
+		// Try to send email, but don't fail the endpoint if it fails
+		let emailSent = true;
+		try {
+			await sendGmail({
+				to: normalizedEmail,
+				subject: "Your Verification Code",
+				text: `Your verification code is: ${codeValue}. It is valid for 15 minutes.`,
+				html: `<p>Your verification code is: <b>${codeValue}</b>. It is valid for 15 minutes.</p>`,
+			});
+		} catch (mailErr) {
+			emailSent = false;
+			console.error(
+				"❌ Verification code email sending failed:",
+				mailErr?.message || mailErr
+			);
+		}
 
 		return res.status(200).json({
 			success: true,
-			message: "Verification code sent successfully",
+			message: emailSent
+				? "Verification code sent successfully"
+				: "Verification code generated, but email delivery failed. Please try again.",
+			emailSent,
 		});
 	} catch (err) {
-		console.error(err);
+		console.error("Send verification code error:", err);
 		return res.status(500).json({ success: false, message: "Server error" });
 	}
 };
