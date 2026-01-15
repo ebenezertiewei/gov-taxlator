@@ -4,6 +4,31 @@ const app = require("./app");
 
 const { PORT = 8000, MONGO_URI } = process.env;
 
+/**
+ * ENV sanity checks (booleans only — no secrets leaked)
+ * Put this in the entry point so it runs once at startup.
+ */
+console.log("MAIL USER:", !!process.env.NODE_CODE_SENDING_EMAIL_ADDRESS);
+console.log("MAIL PASS:", !!process.env.NODE_CODE_SENDING_EMAIL_PASSWORD);
+
+// Optional but recommended: fail fast if critical env vars are missing
+if (!MONGO_URI) {
+	console.error("❌ Missing MONGO_URI in environment variables");
+	process.exit(1);
+}
+
+// If email is required for core flows like signup verification, fail fast as well.
+// If you want to allow running without email in dev, remove this block.
+if (
+	!process.env.NODE_CODE_SENDING_EMAIL_ADDRESS ||
+	!process.env.NODE_CODE_SENDING_EMAIL_PASSWORD
+) {
+	console.error(
+		"❌ Missing email environment variables (NODE_CODE_SENDING_EMAIL_ADDRESS / NODE_CODE_SENDING_EMAIL_PASSWORD)"
+	);
+	process.exit(1);
+}
+
 let server;
 
 // Connect to MongoDB

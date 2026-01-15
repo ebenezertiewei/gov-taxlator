@@ -12,11 +12,23 @@ const app = express();
 
 // Environment-based CORS
 const allowedOrigins =
-	process.env.NODE_ENV === "production" ? "*" : ["http://localhost:8000"];
+	process.env.NODE_ENV === "production"
+		? [process.env.CLIENT_URL].filter(Boolean)
+		: [
+				"http://localhost:5173",
+				"http://localhost:3000",
+				"http://localhost:8000",
+		  ];
 
 app.use(
 	cors({
-		origin: allowedOrigins,
+		origin: (origin, cb) => {
+			// allow server-to-server / Postman (no origin)
+			if (!origin) return cb(null, true);
+
+			if (allowedOrigins.includes(origin)) return cb(null, true);
+			return cb(new Error(`CORS blocked origin: ${origin}`));
+		},
 		credentials: true,
 	})
 );
@@ -24,8 +36,8 @@ app.use(
 // Middlewares
 app.use(helmet());
 app.use(cookieParser());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 // Serve static docs (PDFs)
 app.use("/docs", express.static(path.join(__dirname, "/public/docs")));

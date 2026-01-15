@@ -3,14 +3,16 @@ const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
 	host: "smtp.gmail.com",
-	port: 587, 
-	secure: false, 
+	port: 587,
+	secure: false,
 	auth: {
 		user: process.env.NODE_CODE_SENDING_EMAIL_ADDRESS,
-		pass: process.env.NODE_CODE_SENDING_EMAIL_PASSWORD, 
+		pass: process.env.NODE_CODE_SENDING_EMAIL_PASSWORD,
 	},
-	// logger: true,
-	// debug: true,
+
+	// 🔍 SMTP-level debugging
+	logger: true,
+	debug: true,
 });
 
 transporter.verify((err, success) => {
