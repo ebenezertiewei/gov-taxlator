@@ -9,34 +9,44 @@ const authRoutes = require("./src/routers/auth.routes");
 const taxRoutes = require("./src/routers/tax.routes");
 const vatRoutes = require("./src/routers/vat.routes");
 
-// test log
-console.log(
-	"BOOT: app.js loaded - build",
-	process.env.RENDER_GIT_COMMIT || "local"
-);
-
 const app = express();
 
-// Environment-based CORS
-const allowedOrigins =
-	process.env.NODE_ENV === "production"
-		? [process.env.CLIENT_URL].filter(Boolean)
-		: [
-				"http://localhost:5173",
-				"http://localhost:3000",
-				"http://localhost:8000",
-		  ];
+/**
+ * CORS
+ * - In production: allow CLIENT_URL
+ * - Optionally allow localhost in production when ALLOW_LOCALHOST_CORS=true
+ * - In development: allow localhost origins
+ */
+const isProd = process.env.NODE_ENV === "production";
+const allowLocalhostInProd = process.env.ALLOW_LOCALHOST_CORS === "true";
+
+const localOrigins = [
+	"http://localhost:5173",
+	"http://localhost:3000",
+	"http://localhost:8000",
+];
+
+const allowedOrigins = [
+	...(isProd ? [process.env.CLIENT_URL].filter(Boolean) : localOrigins),
+	...(isProd && allowLocalhostInProd ? localOrigins : []),
+];
 
 app.use(
 	cors({
 		origin: (origin, cb) => {
-			// allow server-to-server / Postman (no origin)
+			// Allow server-to-server / curl / Postman
 			if (!origin) return cb(null, true);
 
-			if (allowedOrigins.includes(origin)) return cb(null, true);
-			return cb(new Error(`CORS blocked origin: ${origin}`));
+			if (allowedOrigins.includes(origin)) {
+				return cb(null, true);
+			}
+
+			// ❗ DO NOT THROW
+			return cb(null, false);
 		},
 		credentials: true,
+		methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+		allowedHeaders: ["Content-Type", "Authorization"],
 	})
 );
 
