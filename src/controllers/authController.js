@@ -339,7 +339,6 @@ exports.signout = async (req, res) => {
 };
 
 /* ================= SEND VERIFICATION CODE ================= */
-/* ================= SEND VERIFICATION CODE ================= */
 exports.sendVerificationCode = async (req, res) => {
 	const { email } = req.body;
 
