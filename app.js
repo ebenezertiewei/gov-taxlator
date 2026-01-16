@@ -50,6 +50,24 @@ app.use("/api/vat", vatRoutes);
 // Health check endpoint
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
+// OAuth callback endpoint (Gmail / Google OAuth)
+app.get("/oauth2callback", (req, res) => {
+  const { code, error } = req.query;
+
+  if (error) {
+    return res.status(400).send(`OAuth error: ${error}`);
+  }
+
+  if (!code) {
+    return res.status(400).send("Missing ?code= in callback URL.");
+  }
+
+  return res
+    .status(200)
+    .send("Authorization received. Copy the code from the URL and paste it into your terminal.");
+});
+
+
 // Root endpoint
 app.get("/", (req, res) => {
 	res.send(
