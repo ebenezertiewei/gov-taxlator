@@ -76,30 +76,6 @@ app.get("/oauth2callback", (req, res) => {
 		);
 });
 
-// Debug smoke test: Send a test email (PROTECT WITH DEBUG_KEY)
-app.get("/debug/send-test-email", async (req, res, next) => {
-	if (req.query.key !== process.env.DEBUG_KEY) {
-		return res.status(401).json({ success: false, message: "Unauthorized" });
-	}
-
-	try {
-		const { sendGmail } = require("./src/services/gmailApiMailer");
-		const to = req.query.to || process.env.GMAIL_SENDER;
-
-		await sendGmail({
-			to,
-			subject: "Taxlator Gmail API Test",
-			text: "If you received this, Gmail API is configured correctly.",
-			html: "<p>If you received this, Gmail API is configured correctly.</p>",
-		});
-		console.log("HIT: /debug/send-test-email");
-
-		return res.json({ success: true, sentTo: to });
-	} catch (err) {
-		return next(err);
-	}
-});
-
 // Root endpoint
 app.get("/", (req, res) => {
 	res.send(
