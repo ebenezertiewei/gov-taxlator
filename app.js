@@ -1,3 +1,4 @@
+// app.js
 const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
@@ -7,6 +8,12 @@ const path = require("path");
 const authRoutes = require("./src/routers/auth.routes");
 const taxRoutes = require("./src/routers/tax.routes");
 const vatRoutes = require("./src/routers/vat.routes");
+
+// test log
+console.log(
+	"BOOT: app.js loaded - build",
+	process.env.RENDER_GIT_COMMIT || "local"
+);
 
 const app = express();
 
@@ -52,21 +59,46 @@ app.get("/health", (req, res) => res.json({ status: "ok" }));
 
 // OAuth callback endpoint (Gmail / Google OAuth)
 app.get("/oauth2callback", (req, res) => {
-  const { code, error } = req.query;
+	const { code, error } = req.query;
 
-  if (error) {
-    return res.status(400).send(`OAuth error: ${error}`);
-  }
+	if (error) {
+		return res.status(400).send(`OAuth error: ${error}`);
+	}
 
-  if (!code) {
-    return res.status(400).send("Missing ?code= in callback URL.");
-  }
+	if (!code) {
+		return res.status(400).send("Missing ?code= in callback URL.");
+	}
 
-  return res
-    .status(200)
-    .send("Authorization received. Copy the code from the URL and paste it into your terminal.");
+	return res
+		.status(200)
+		.send(
+			"Authorization received. Copy the code from the URL and paste it into your terminal."
+		);
 });
 
+// Debug smoke test: Send a test email (PROTECT WITH DEBUG_KEY)
+app.get("/debug/send-test-email", async (req, res, next) => {
+	if (req.query.key !== process.env.DEBUG_KEY) {
+		return res.status(401).json({ success: false, message: "Unauthorized" });
+	}
+
+	try {
+		const { sendGmail } = require("./src/services/gmailApiMailer");
+		const to = req.query.to || process.env.GMAIL_SENDER;
+
+		await sendGmail({
+			to,
+			subject: "Taxlator Gmail API Test",
+			text: "If you received this, Gmail API is configured correctly.",
+			html: "<p>If you received this, Gmail API is configured correctly.</p>",
+		});
+		console.log("HIT: /debug/send-test-email");
+
+		return res.json({ success: true, sentTo: to });
+	} catch (err) {
+		return next(err);
+	}
+});
 
 // Root endpoint
 app.get("/", (req, res) => {
