@@ -233,7 +233,6 @@ exports.changePassword = async (req, res) => {
 };
 
 /* ================= FORGOT PASSWORD ================= */
-/* ================= FORGOT PASSWORD ================= */
 exports.forgotPassword = async (req, res) => {
 	const { email } = req.body;
 

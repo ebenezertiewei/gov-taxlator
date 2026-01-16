@@ -2,19 +2,51 @@ const Joi = require("joi");
 
 exports.taxRequestSchema = Joi.object({
 	taxType: Joi.string().valid("PAYE/PIT", "FREELANCER", "CIT").required(),
-
-	// PAYE/PIT
-	grossIncome: Joi.number().positive().precision(2).required(),
-	rentRelief: Joi.number().min(0).precision(2).optional(),
-	otherDeductions: Joi.number().min(0).precision(2).optional(),
-
 	frequency: Joi.string().valid("monthly", "annual").default("annual"),
 
-	//   FREELANCER
-	pension: Joi.boolean().default(true),
+	// PAYE/PIT & FREELANCER
+	grossIncome: Joi.number().positive().precision(2).when("taxType", {
+		is: "CIT",
+		then: Joi.optional(),
+		otherwise: Joi.required(),
+	}),
 
-	// FREELANCER & CIT
-	expenses: Joi.number().min(0).precision(2).optional(),
-}).custom((value, helpers) => {
-	return value;
-});
+	// PAYE/PIT-only deductions
+	rentRelief: Joi.number().min(0).precision(2).when("taxType", {
+		is: "PAYE/PIT",
+		then: Joi.optional(),
+		otherwise: Joi.forbidden(),
+	}),
+	otherDeductions: Joi.number().min(0).precision(2).when("taxType", {
+		is: "PAYE/PIT",
+		then: Joi.optional(),
+		otherwise: Joi.forbidden(),
+	}),
+
+	// FREELANCER-only
+	pension: Joi.boolean().default(true).when("taxType", {
+		is: "FREELANCER",
+		then: Joi.optional(),
+		otherwise: Joi.forbidden(),
+	}),
+	expenses: Joi.number()
+		.min(0)
+		.precision(2)
+		.when("taxType", {
+			is: Joi.valid("FREELANCER", "CIT"),
+			then: Joi.optional(),
+			otherwise: Joi.forbidden(),
+		}),
+
+	// CIT-only
+	revenue: Joi.number().positive().precision(2).when("taxType", {
+		is: "CIT",
+		then: Joi.required(),
+		otherwise: Joi.forbidden(),
+	}),
+	companySize: Joi.string().valid("SMALL", "MEDIUM", "LARGE").when("taxType", {
+		is: "CIT",
+		then: Joi.required(),
+		otherwise: Joi.forbidden(),
+	}),
+}).unknown(false);

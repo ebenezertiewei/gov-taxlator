@@ -2,14 +2,32 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/authModels");
 
-const protect = async (req, res, next) => {
-	const authHeader = req.headers.authorization;
-
-	if (!authHeader || !authHeader.startsWith("Bearer ")) {
-		return res.status(401).json({ success: false, message: "Not authorized" });
+const getBearerToken = (req) => {
+	// 1) Standard Authorization header
+	const header = req.headers.authorization;
+	if (header && header.startsWith("Bearer ")) {
+		return header.split(" ")[1];
 	}
 
-	const token = authHeader.split(" ")[1];
+	// 2) Cookie fallback (you set this cookie in signin)
+	const cookieVal = req.cookies?.Authorization;
+	if (
+		cookieVal &&
+		typeof cookieVal === "string" &&
+		cookieVal.startsWith("Bearer ")
+	) {
+		return cookieVal.split(" ")[1];
+	}
+
+	return null;
+};
+
+const protect = async (req, res, next) => {
+	const token = getBearerToken(req);
+
+	if (!token) {
+		return res.status(401).json({ success: false, message: "Not authorized" });
+	}
 
 	try {
 		if (!process.env.TOKEN_SECRET) {
@@ -32,12 +50,11 @@ const protect = async (req, res, next) => {
 		}
 
 		req.user = user;
-		next();
+		return next();
 	} catch (err) {
-		if (err.name === "TokenExpiredError") {
+		if (err?.name === "TokenExpiredError") {
 			return res.status(401).json({ success: false, message: "Token expired" });
 		}
-
 		return res.status(401).json({ success: false, message: "Invalid token" });
 	}
 };
