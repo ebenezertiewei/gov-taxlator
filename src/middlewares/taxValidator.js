@@ -1,3 +1,4 @@
+// src/middlewares/taxValidator.js
 const Joi = require("joi");
 
 exports.taxRequestSchema = Joi.object({
@@ -7,11 +8,11 @@ exports.taxRequestSchema = Joi.object({
 	// PAYE/PIT & FREELANCER
 	grossIncome: Joi.number().positive().precision(2).when("taxType", {
 		is: "CIT",
-		then: Joi.optional(),
+		then: Joi.forbidden(),
 		otherwise: Joi.required(),
 	}),
 
-	// PAYE/PIT-only deductions
+	// PAYE/PIT-only
 	rentRelief: Joi.number().min(0).precision(2).when("taxType", {
 		is: "PAYE/PIT",
 		then: Joi.optional(),
@@ -23,12 +24,14 @@ exports.taxRequestSchema = Joi.object({
 		otherwise: Joi.forbidden(),
 	}),
 
-	// FREELANCER-only
-	pension: Joi.boolean().default(true).when("taxType", {
+	// FREELANCER-only (NOTE: your backend service expects pension NUMBER, not boolean)
+	pension: Joi.number().min(0).precision(2).when("taxType", {
 		is: "FREELANCER",
 		then: Joi.optional(),
 		otherwise: Joi.forbidden(),
 	}),
+
+	// Shared field used by FREELANCER & CIT
 	expenses: Joi.number()
 		.min(0)
 		.precision(2)
@@ -37,6 +40,13 @@ exports.taxRequestSchema = Joi.object({
 			then: Joi.optional(),
 			otherwise: Joi.forbidden(),
 		}),
+
+	// ✅ Alias for CIT to match frontend naming
+	businessExpenses: Joi.number().min(0).precision(2).when("taxType", {
+		is: "CIT",
+		then: Joi.optional(),
+		otherwise: Joi.forbidden(),
+	}),
 
 	// CIT-only
 	revenue: Joi.number().positive().precision(2).when("taxType", {
@@ -47,6 +57,11 @@ exports.taxRequestSchema = Joi.object({
 	companySize: Joi.string().valid("SMALL", "MEDIUM", "LARGE").when("taxType", {
 		is: "CIT",
 		then: Joi.required(),
+		otherwise: Joi.forbidden(),
+	}),
+	businessExpenses: Joi.number().min(0).optional().when("taxType", {
+		is: "CIT",
+		then: Joi.optional(),
 		otherwise: Joi.forbidden(),
 	}),
 }).unknown(false);

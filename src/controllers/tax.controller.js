@@ -1,4 +1,4 @@
-// TaxController.js
+// src/controllers/tax.controller.js
 const Joi = require("joi");
 const payeService = require("../services/payePit.service");
 const freelancerService = require("../services/freelancer.service");
@@ -14,6 +14,7 @@ const taxRequestSchema = Joi.object({
 	frequency: Joi.string().valid("monthly", "annual").default("annual"),
 	pension: Joi.number().min(0).optional(),
 	expenses: Joi.number().min(0).optional(),
+	businessExpenses: Joi.number().min(0).optional(),
 	companySize: Joi.string().valid("SMALL", "MEDIUM", "LARGE").optional(),
 	revenue: Joi.number().positive().optional(),
 })
@@ -34,10 +35,23 @@ const taxRequestSchema = Joi.object({
 exports.calculateTax = async (req, res, next) => {
 	try {
 		const { value, error } = taxRequestSchema.validate(req.body);
-		if (error)
+
+		if (error) {
 			return res
 				.status(400)
 				.json({ success: false, error: error.details[0].message });
+		}
+
+		// ✅ Backward/forward compatibility:
+		// If frontend sends `businessExpenses` for CIT, map it to `expenses` (what your service expects).
+		if (
+			value.taxType === "CIT" &&
+			value.expenses == null &&
+			value.businessExpenses != null
+		) {
+			value.expenses = value.businessExpenses;
+			delete value.businessExpenses;
+		}
 
 		let result;
 		switch (value.taxType) {
