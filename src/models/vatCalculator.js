@@ -1,3 +1,4 @@
+// gov-taxlatorAPI/src/models/vatCalculator.js
 const mongoose = require("mongoose");
 
 const VatCalculatorSchema = new mongoose.Schema(
@@ -19,7 +20,12 @@ const VatCalculatorSchema = new mongoose.Schema(
 		// Type of transaction: Domestic, Digital, Export, Exempt
 		transactionType: {
 			type: String,
-			enum: ["Domestic sale/Purchase", "Digital Services", "Export/International", "Exempt"],
+			enum: [
+				"Domestic sale/Purchase",
+				"Digital Services",
+				"Export/International",
+				"Exempt",
+			],
 			required: true,
 		},
 	},

@@ -1,4 +1,4 @@
-// VAT Controller
+// src/controllers/vat.controller.js
 const vatRequestSchema = require("../middlewares/vatValidator");
 const { calculateVATService } = require("../services/vat.service");
 const VATRecord = require("../models/vatRecordModel");
