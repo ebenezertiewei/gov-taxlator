@@ -1,13 +1,15 @@
+// src/utils/tax/cit.util.js
+
 /**
  * Nigerian Company Income Tax (CIT) rates
+ * SMALL: 0% (<= 50m)
+ * MEDIUM: 20% (50m - 300m)
+ * LARGE: 30% (> 300m)
  */
 const CIT_RATES = {
 	SMALL: 0.0,
 	MEDIUM: 0.2,
 	LARGE: 0.3,
-	// small: 50 million Naira and below → 0%
-	// medium: 50 million to 300 million Naira → 20%
-	// large: above 300 million Naira → 30%
 };
 
 module.exports = { CIT_RATES };

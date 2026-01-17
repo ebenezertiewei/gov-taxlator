@@ -1,11 +1,10 @@
-// const { CIT_TAX_RATE } = require("../utils/taxBands");
-
+// src/services/cit.service.js
 const { CIT_RATES } = require("../utils/tax/cit.util");
 
 /**
  * Calculate Company Income Tax (CIT)
  */
-exports.calculateCIT = async ({ revenue, expenses = 0, companySize }) => {
+const calculateCIT = async ({ revenue, expenses = 0, companySize }) => {
 	const rate = CIT_RATES[companySize];
 
 	if (rate === undefined) {
@@ -30,3 +29,5 @@ exports.calculateCIT = async ({ revenue, expenses = 0, companySize }) => {
 		effectiveTaxRate: rate,
 	};
 };
+
+module.exports = { calculateCIT };

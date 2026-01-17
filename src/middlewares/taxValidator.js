@@ -24,14 +24,14 @@ exports.taxRequestSchema = Joi.object({
 		otherwise: Joi.forbidden(),
 	}),
 
-	// FREELANCER-only (NOTE: your backend service expects pension NUMBER, not boolean)
+	// FREELANCER-only
 	pension: Joi.number().min(0).precision(2).when("taxType", {
 		is: "FREELANCER",
 		then: Joi.optional(),
 		otherwise: Joi.forbidden(),
 	}),
 
-	// Shared field used by FREELANCER & CIT
+	// Shared by FREELANCER & CIT
 	expenses: Joi.number()
 		.min(0)
 		.precision(2)
@@ -41,7 +41,7 @@ exports.taxRequestSchema = Joi.object({
 			otherwise: Joi.forbidden(),
 		}),
 
-	// ✅ Alias for CIT to match frontend naming
+	// Alias for CIT (frontend naming)
 	businessExpenses: Joi.number().min(0).precision(2).when("taxType", {
 		is: "CIT",
 		then: Joi.optional(),
@@ -57,11 +57,6 @@ exports.taxRequestSchema = Joi.object({
 	companySize: Joi.string().valid("SMALL", "MEDIUM", "LARGE").when("taxType", {
 		is: "CIT",
 		then: Joi.required(),
-		otherwise: Joi.forbidden(),
-	}),
-	businessExpenses: Joi.number().min(0).optional().when("taxType", {
-		is: "CIT",
-		then: Joi.optional(),
 		otherwise: Joi.forbidden(),
 	}),
 }).unknown(false);
