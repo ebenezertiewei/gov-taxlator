@@ -24,7 +24,35 @@ const userSchema = new mongoose.Schema(
 			trim: true,
 			lowercase: true,
 		},
-		password: { type: String, required: true, minlength: 8, select: false },
+		password: {
+			type: String,
+			required: true,
+			minlength: 8,
+			select: false,
+		},
+
+		/* ================= PROFILE ================= */
+		avatarUrl: {
+			type: String,
+			default: null,
+		},
+
+		/* ================= SETTINGS ================= */
+		language: {
+			type: String,
+			default: "English",
+		},
+		theme: {
+			type: String,
+			enum: ["Light", "Dark"],
+			default: "Light",
+		},
+		notifications: {
+			type: Boolean,
+			default: true,
+		},
+
+		/* ================= AUTH ================= */
 		verified: { type: Boolean, default: false },
 		verificationCode: { type: String },
 		verificationExpires: { type: Date },
