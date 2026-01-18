@@ -13,6 +13,9 @@ exports.taxRequestSchema = Joi.object({
 	}),
 
 	// PAYE/PIT-only
+	includePension: Joi.boolean().default(true),
+	includeNhf: Joi.boolean().default(true),
+	includeNhIs: Joi.boolean().default(true),
 	rentRelief: Joi.number().min(0).precision(2).when("taxType", {
 		is: "PAYE/PIT",
 		then: Joi.optional(),

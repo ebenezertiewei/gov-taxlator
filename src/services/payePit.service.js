@@ -1,79 +1,88 @@
 // src/services/paye.service.js
 const PAYE_TAX_BANDS = require("../utils/taxBands");
 // -----------------------
-console.log("PAYE_TAX_BANDS:", PAYE_TAX_BANDS);
-console.log("Is Array:", Array.isArray(PAYE_TAX_BANDS));
-// -----------------------
 
 /**
  * Calculate PAYE Tax (Nigeria)
  */
-const calculatePAYE = async ({
+exports.calculatePAYE = async ({
 	grossIncome,
-	frequency = "annual",
-	pension = true,
-	nhis = true,
-	nhf = true,
+	otherDeductions = 0,
+	includePension = true,
+	includeNhf = true,
+	includeNhIs = true,
 }) => {
-	// 1. Normalize income to annual
-	const annualIncome = frequency === "monthly" ? grossIncome * 12 : grossIncome;
+	const deductions = {};
 
-	// 2. Statutory deductions
-	const pensionDeduction = pension ? annualIncome * 0.08 : 0;
-	const nhisDeduction = nhis ? annualIncome * 0.1 : 0;
-	const nhfDeduction = nhf ? annualIncome * 0.025 : 0;
+	// Fixed statutory deductions
+	deductions["Rent Relief Deduction (20%)"] = grossIncome * 0.2;
 
-	const statutoryDeductions = pensionDeduction + nhisDeduction + nhfDeduction;
+	if (includePension) deductions["Pension Deduction (8%)"] = grossIncome * 0.08;
 
-	// 3. Consolidated Relief Allowance (CRA)
-	const CRA = annualIncome * 0.2 + 200000;
+	if (includeNhIs)
+		deductions["National Health Insurance Scheme Deduction (5%)"] =
+			grossIncome * 0.05;
 
-	// 4. Taxable income
-	const taxableIncome = Math.max(annualIncome - CRA - statutoryDeductions, 0);
+	if (includeNhf)
+		deductions["National Housing Fund (2.5%)"] = grossIncome * 0.025;
 
-	// 5. Apply PAYE tax bands
-	let remainingIncome = taxableIncome;
-	let totalTax = 0;
-	const breakdown = [];
+	if (otherDeductions > 0) deductions["Other Expenses"] = otherDeductions;
 
-	for (const band of PAYE_TAX_BANDS) {
-		if (remainingIncome <= 0) break;
+	const totalDeductions = Object.values(deductions).reduce((a, b) => a + b, 0);
 
-		const taxableAmount = Math.min(remainingIncome, band.limit);
-		const taxForBand = taxableAmount * band.rate;
+	const taxableIncome = grossIncome - totalDeductions;
 
-		breakdown.push({
-			bandLimit: band.limit,
-			rate: band.rate,
-			taxableAmount,
-			tax: Number(taxForBand.toFixed(2)),
-		});
+	// Progressive tax
+	const bands = [
+		{ limit: 800000, rate: 0 },
+		{ limit: 3000000, rate: 0.15 },
+		{ limit: 12000000, rate: 0.18 },
+		{ limit: 25000000, rate: 0.21 },
+		{ limit: 50000000, rate: 0.23 },
+		{ limit: Infinity, rate: 0.25 },
+	];
 
-		totalTax += taxForBand;
-		remainingIncome -= taxableAmount;
+	let remaining = taxableIncome;
+	let tax = 0;
+	const steps = [];
+
+	let lastLimit = 0;
+	for (const band of bands) {
+		if (remaining <= 0) break;
+
+		const taxableAtBand = Math.min(band.limit - lastLimit, remaining);
+		const bandTax = taxableAtBand * band.rate;
+
+		if (taxableAtBand > 0) {
+			steps.push({
+				label:
+					band.rate === 0
+						? `First ₦${band.limit.toLocaleString()}`
+						: `Tax ${band.rate * 100}% of ₦${taxableAtBand.toLocaleString()}`,
+				amount: bandTax,
+			});
+		}
+
+		tax += bandTax;
+		remaining -= taxableAtBand;
+		lastLimit = band.limit;
 	}
 
-	// 6. Monthly tax (for UI)
-	const monthlyTax = totalTax / 12;
-
 	return {
-		grossIncome: annualIncome,
-		frequency,
-		deductions: {
-			pension: pensionDeduction,
-			nhis: nhisDeduction,
-			nhf: nhfDeduction,
-			CRA,
-		},
+		grossIncome,
+		netIncome: grossIncome - tax,
+		totalDeductions,
+		deductions,
 		taxableIncome,
-		totalAnnualTax: Number(totalTax.toFixed(2)),
-		monthlyTax: Number(monthlyTax.toFixed(2)),
-		breakdown,
-		effectiveTaxRate:
-			annualIncome > 0 ? +(totalTax / annualIncome).toFixed(3) : 0,
+		totalTax: tax,
+		taxBands: [
+			{ label: "₦0 - ₦800,000", rate: "0%" },
+			{ label: "₦800,001 - ₦3,000,000", rate: "15%" },
+			{ label: "₦3,000,001 - ₦12,000,000", rate: "18%" },
+			{ label: "₦12,000,001 - ₦25,000,000", rate: "21%" },
+			{ label: "₦25,000,001 - ₦50,000,000", rate: "23%" },
+			{ label: "Above ₦50,000,000", rate: "25%" },
+		],
+		computation: steps,
 	};
-};
-
-module.exports = {
-	calculatePAYE,
 };
